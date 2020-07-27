@@ -11,15 +11,27 @@ import {
 import Customer from '@modules/customers/infra/typeorm/entities/Customer';
 import OrdersProducts from '@modules/orders/infra/typeorm/entities/OrdersProducts';
 
+@Entity()
 class Order {
+  @PrimaryGeneratedColumn()
   id: string;
 
+  @ManyToOne(() => Customer, {
+    eager: true,
+  })
+  @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  order_products: OrdersProducts[];
+  @OneToMany(() => OrdersProducts, orderProduct => orderProduct.order, {
+    cascade: true,
+    eager: true,
+  })
+  ordersProducts: OrdersProducts[];
 
+  @CreateDateColumn()
   created_at: Date;
 
+  @UpdateDateColumn()
   updated_at: Date;
 }
 
