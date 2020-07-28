@@ -17,6 +17,9 @@ interface IRequest {
   products: IProduct[];
 }
 
+interface IFindProducts {
+  id: string;
+}
 @injectable()
 class CreateOrderService {
   constructor(
@@ -31,7 +34,30 @@ class CreateOrderService {
   ) {}
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
-    const order = new Order();
+    const customer = await this.customersRepository.findById(customer_id);
+
+    if (!customer) {
+      throw new AppError('Customer doesnt exists');
+    }
+
+    const productsList = await this.productsRepository.findAllById(products);
+
+    if (!productsList[0]) {
+      throw new AppError('Products doesnt exists');
+    }
+
+    console.log('depois');
+
+    const updatedProducts = productsList.map(product => ({
+      product_id: product.id,
+      price: product.price,
+      quantity: product.quantity,
+    }));
+
+    const order = await this.ordersRepository.create({
+      customer,
+      products: updatedProducts,
+    });
 
     return order;
   }
