@@ -17,9 +17,6 @@ interface IRequest {
   products: IProduct[];
 }
 
-interface IFindProducts {
-  id: string;
-}
 @injectable()
 class CreateOrderService {
   constructor(
@@ -42,21 +39,29 @@ class CreateOrderService {
 
     const productsList = await this.productsRepository.findAllById(products);
 
-    if (!productsList[0]) {
-      throw new AppError('Products doesnt exists');
-    }
+    const orderProducts = products.map(product => {
+      const { id: product_id, quantity } = product;
 
-    console.log('depois');
+      const foundedProduct = productsList.find(
+        productList => productList.id === product_id,
+      );
 
-    const updatedProducts = productsList.map(product => ({
-      product_id: product.id,
-      price: product.price,
-      quantity: product.quantity,
-    }));
+      if (!foundedProduct || quantity > foundedProduct.quantity) {
+        throw new AppError('Insufficient balance');
+      }
+
+      return {
+        product_id,
+        price: foundedProduct.price,
+        quantity,
+      };
+    });
+
+    await this.productsRepository.updateQuantity(products);
 
     const order = await this.ordersRepository.create({
       customer,
-      products: updatedProducts,
+      products: orderProducts,
     });
 
     return order;
